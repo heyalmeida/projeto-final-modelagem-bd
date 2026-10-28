@@ -1,0 +1,72 @@
+[
+  {
+    "id": "er-acesso",
+    "name": "ER Acesso — Núcleo de Acesso",
+    "file": "docs/diagramas/xml/er-acesso.xml"
+  },
+  {
+    "id": "cl-acesso",
+    "name": "Classes Acesso — Núcleo de Acesso",
+    "file": "docs/diagramas/xml/cl-acesso.xml"
+  },
+  {
+    "id": "er-academico",
+    "name": "ER Academico — Base Acadêmica",
+    "file": "docs/diagramas/xml/er-academico.xml"
+  },
+  {
+    "id": "cl-academico",
+    "name": "Classes Academico — Base Acadêmica",
+    "file": "docs/diagramas/xml/cl-academico.xml"
+  },
+  {
+    "id": "er-avaliacoes",
+    "name": "ER Avaliacoes — Módulo Avaliações",
+    "file": "docs/diagramas/xml/er-avaliacoes.xml"
+  },
+  {
+    "id": "cl-avaliacoes",
+    "name": "Classes Avaliacoes — Módulo Avaliações",
+    "file": "docs/diagramas/xml/cl-avaliacoes.xml"
+  },
+  {
+    "id": "er-financeiro",
+    "name": "ER Financeiro — Módulo Financeiro",
+    "file": "docs/diagramas/xml/er-financeiro.xml"
+  },
+  {
+    "id": "cl-financeiro",
+    "name": "Classes Financeiro — Módulo Financeiro",
+    "file": "docs/diagramas/xml/cl-financeiro.xml"
+  },
+  {
+    "id": "er-presenca",
+    "name": "ER Presenca — Módulo Presença",
+    "file": "docs/diagramas/xml/er-presenca.xml"
+  },
+  {
+    "id": "cl-presenca",
+    "name": "Classes Presenca — Módulo Presença",
+    "file": "docs/diagramas/xml/cl-presenca.xml"
+  },
+  {
+    "id": "er-agenda",
+    "name": "ER Agenda — Módulo Agenda",
+    "file": "docs/diagramas/xml/er-agenda.xml"
+  },
+  {
+    "id": "cl-agenda",
+    "name": "Classes Agenda — Módulo Agenda",
+    "file": "docs/diagramas/xml/cl-agenda.xml"
+  },
+  {
+    "id": "er-biblioteca",
+    "name": "ER Biblioteca — Módulo Biblioteca",
+    "file": "docs/diagramas/xml/er-biblioteca.xml"
+  },
+  {
+    "id": "cl-biblioteca",
+    "name": "Classes Biblioteca — Módulo Biblioteca",
+    "file": "docs/diagramas/xml/cl-biblioteca.xml"
+  }
+]

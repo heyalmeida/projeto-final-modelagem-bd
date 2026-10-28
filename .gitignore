@@ -1,0 +1,30 @@
+# ===== Dependências =====
+node_modules/
+
+# ===== Builds =====
+web/.next/
+web/out/
+web/next-env.d.ts
+*.tsbuildinfo
+
+# ===== Ambiente e segredos =====
+.emile/
+.env
+.env.*
+!.env.example
+
+# ===== Logs e temporários =====
+*.log
+npm-debug.log*
+yarn-error.log*
+.DS_Store
+Thumbs.db
+
+# ===== Python (geradores de diagrama) =====
+__pycache__/
+*.pyc
+
+# ===== Bancos gerados em tempo de execução =====
+*.db-journal
+*.db-shm
+*.db-wal

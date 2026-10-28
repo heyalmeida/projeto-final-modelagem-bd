@@ -1,0 +1,338 @@
+﻿classDiagram
+    direction LR
+
+    namespace Nucleo {
+        class Papel {
+            +int idPapel
+            +String nome
+            +String descricao
+            +possuiPermissao(permissao) bool
+        }
+        class Grupo {
+            +int idGrupo
+            +String nome
+            +String descricao
+            +boolean ativo
+            +adicionarUsuario(usuario)
+            +habilitarModulo(modulo)
+            +possuiModulo(codigo) bool
+        }
+        class Usuario {
+            +int idUsuario
+            +String nome
+            +String email
+            +String senhaHash
+            +boolean ativo
+            +DateTime criadoEm
+            +autenticar(email, senha) bool
+            +alterarSenha(atual, nova) bool
+            +pertenceAoGrupo(grupo) bool
+            +possuiModulo(codigo) bool
+        }
+        class Modulo {
+            +int idModulo
+            +String codigo
+            +String nome
+            +String descricao
+            +boolean ativo
+            +habilitarPara(grupo, responsavel)
+            +desabilitarPara(grupo)
+        }
+        class GrupoModulo {
+            +DateTime habilitadoEm
+            +int idUsuarioHabilitou
+            +registrarHabilitacao()
+        }
+    }
+
+    namespace Cursos {
+        class Aluno {
+            +int idAluno
+            +String ra
+            +Date dataIngresso
+            +String situacao
+            +matricular(turma) Matricula
+            +consultarHistorico()
+        }
+        class Professor {
+            +int idProfessor
+            +String siape
+            +String titulacao
+            +String areaAtuacao
+            +ministrarTurma(turma)
+            +lancarNota(matricula, avaliacao, valor) Nota
+        }
+        class Curso {
+            +int idCurso
+            +String nome
+            +String codigo
+            +int cargaHoraria
+            +String modalidade
+            +boolean ativo
+            +adicionarDisciplina(disciplina)
+            +possuiAluno(aluno) bool
+        }
+        class Disciplina {
+            +int idDisciplina
+            +String nome
+            +String codigo
+            +int cargaHoraria
+            +int periodo
+            +boolean ativo
+            +abrirTurma(periodo, vagas) Turma
+        }
+        class Turma {
+            +int idTurma
+            +String codigo
+            +String periodoLetivo
+            +String turno
+            +int vagas
+            +String status
+            +possuiVaga() bool
+            +abrirMatriculas()
+            +encerrar()
+        }
+        class Aula {
+            +int idAula
+            +DateTime dataAula
+            +String tema
+            +String conteudo
+            +int cargaHoraria
+            +registrarConteudo()
+        }
+        class Matricula {
+            +int idMatricula
+            +DateTime dataMatricula
+            +String status
+            +double notaFinal
+            +double frequencia
+            +trancar()
+            +cancelar()
+            +concluir() bool
+            +calcularFrequencia() double
+        }
+    }
+
+    namespace Avaliacoes {
+        class Avaliacao {
+            +int idAvaliacao
+            +String titulo
+            +String tipo
+            +double peso
+            +double notaMaxima
+            +DateTime dataInicio
+            +DateTime dataFim
+            +int maxTentativas
+            +String status
+            +estaAberta() bool
+            +calcularMedia() double
+        }
+        class Questao {
+            +int idQuestao
+            +String enunciado
+            +String tipo
+            +double pontuacao
+            +int ordem
+            +validarResposta(resposta) bool
+        }
+        class Alternativa {
+            +int idAlternativa
+            +String texto
+            +boolean correta
+            +int ordem
+            +marcarCorreta()
+            +desmarcarCorreta()
+        }
+        class Tentativa {
+            +int idTentativa
+            +int numero
+            +DateTime inicio
+            +DateTime fim
+            +String status
+            +double pontuacao
+            +iniciar()
+            +finalizar()
+            +calcularPontuacao() double
+        }
+        class Resposta {
+            +int idResposta
+            +String textoDissertativo
+            +boolean correta
+            +avaliar() bool
+        }
+        class Nota {
+            +int idNota
+            +double valor
+            +DateTime dataLancamento
+            +String observacao
+            +alterarValor(novo, autor)
+            +estaAprovado() bool
+        }
+    }
+
+    namespace Certificados {
+        class ModeloCertificado {
+            +int idModelo
+            +String nome
+            +String layout
+            +int cargaHorariaPadrao
+            +boolean ativo
+            +gerarCertificado(matricula) Certificado
+        }
+        class Certificado {
+            +int idCertificado
+            +String codigoVerificacao
+            +DateTime dataEmissao
+            +int cargaHoraria
+            +String status
+            +String motivoCancelamento
+            +validarCodigo(codigo) bool
+            +cancelar(motivo, autor)
+            +gerarPdf() byte
+        }
+    }
+
+    namespace Eventos {
+        class Evento {
+            +int idEvento
+            +String titulo
+            +String tipo
+            +String descricao
+            +DateTime dataInicio
+            +DateTime dataFim
+            +String local
+            +int vagas
+            +int cargaHoraria
+            +String status
+            +abrirInscricoes()
+            +possuiVaga() bool
+            +encerrar()
+        }
+        class InscricaoEvento {
+            +int idInscricao
+            +DateTime dataInscricao
+            +String status
+            +boolean presenca
+            +boolean certificadoEmitido
+            +confirmarPresenca()
+            +emitirCertificado() Certificado
+            +cancelar()
+        }
+    }
+
+    namespace Projetos {
+        class ProjetoAcademico {
+            +int idProjeto
+            +String titulo
+            +String resumo
+            +Date dataInicio
+            +Date dataFim
+            +String status
+            +double notaFinal
+            +adicionarParticipante(aluno, papel)
+            +encerrar() bool
+            +calcularNotaFinal() double
+        }
+        class ParticipacaoProjeto {
+            +int idParticipacao
+            +String papel
+            +Date dataEntrada
+            +boolean ativo
+            +tornarCoordenador()
+            +desativar()
+        }
+        class EntregaProjeto {
+            +int idEntrega
+            +String titulo
+            +String arquivo
+            +int versao
+            +DateTime dataEntrega
+            +String status
+            +double nota
+            +String feedback
+            +avaliar(nota, feedback)
+            +reenviar(arquivo) EntregaProjeto
+        }
+    }
+
+    namespace Biblioteca {
+        class ObraBibliografica {
+            +int idObra
+            +String titulo
+            +String autor
+            +String isbn
+            +String editora
+            +int ano
+            +String area
+            +disponibilidade() int
+        }
+        class Exemplar {
+            +int idExemplar
+            +String tombo
+            +String status
+            +String localizacao
+            +emprestar(aluno) Emprestimo
+            +devolver()
+            +estaDisponivel() bool
+        }
+        class Emprestimo {
+            +int idEmprestimo
+            +DateTime dataEmprestimo
+            +DateTime dataPrevista
+            +DateTime dataDevolucao
+            +String status
+            +int renovacoes
+            +double multa
+            +renovar() bool
+            +devolver() double
+            +estaAtrasado() bool
+        }
+    }
+
+    Usuario <|-- Aluno
+    Usuario <|-- Professor
+
+    Papel "1" -- "0..*" Usuario : define
+    Grupo "1" -- "0..*" Usuario : reune
+    Grupo "1" -- "0..*" GrupoModulo : habilita
+    Modulo "1" -- "0..*" GrupoModulo : liberado
+
+    Curso "1" -- "0..*" Aluno : vincula
+    Professor "0..1" -- "0..*" Curso : coordena
+    Curso "1" -- "1..*" Disciplina : possui
+    Professor "1" -- "0..*" Disciplina : responde
+    Disciplina "1" -- "0..*" Turma : oferta
+    Professor "1" -- "0..*" Turma : leciona
+    Turma "1" -- "0..*" Aula : contem
+    Turma "1" -- "0..*" Matricula : recebe
+    Aluno "1" -- "0..*" Matricula : realiza
+
+    Turma "1" -- "0..*" Avaliacao : possui
+    Avaliacao "1" -- "1..*" Questao : compoe
+    Questao "1" -- "0..*" Alternativa : possui
+    Avaliacao "1" -- "0..*" Tentativa : gera
+    Matricula "1" -- "0..*" Tentativa : executa
+    Tentativa "1" -- "0..*" Resposta : registra
+    Questao "1" -- "0..*" Resposta : recebe
+    Matricula "1" -- "0..*" Nota : obtem
+    Avaliacao "1" -- "0..*" Nota : produz
+    Professor "1" -- "0..*" Nota : lanca
+
+    ModeloCertificado "1" -- "0..*" Certificado : orienta
+    Matricula "1" -- "0..1" Certificado : conclui
+
+    Professor "1" -- "0..*" Evento : responde
+    Evento "1" -- "0..*" InscricaoEvento : recebe
+    Aluno "1" -- "0..*" InscricaoEvento : inscreve
+
+    Curso "1" -- "0..*" ProjetoAcademico : abriga
+    Professor "1" -- "0..*" ProjetoAcademico : orienta
+    ProjetoAcademico "1" -- "1..*" ParticipacaoProjeto : possui
+    Aluno "1" -- "0..*" ParticipacaoProjeto : participa
+    ProjetoAcademico "1" -- "0..*" EntregaProjeto : recebe
+
+    Disciplina "0..1" -- "0..*" ObraBibliografica : indica
+    ObraBibliografica "1" -- "1..*" Exemplar : possui
+    Exemplar "1" -- "0..*" Emprestimo : gera
+    Aluno "1" -- "0..*" Emprestimo : retira
+

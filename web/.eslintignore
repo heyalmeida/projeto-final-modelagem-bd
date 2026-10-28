@@ -1,0 +1,10 @@
+# artefatos de build
+.next
+out
+node_modules
+
+# arquivo gerado pelo Next
+next-env.d.ts
+
+# harness de verificação (roda fora do bundler, com mocks de navegação)
+_verif

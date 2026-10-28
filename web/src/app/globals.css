@@ -1,0 +1,37 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    -webkit-print-color-adjust: exact;
+  }
+
+  body {
+    overflow-x: hidden;
+  }
+}
+
+@layer components {
+  /**
+   * Títulos do produto. O peso 600 compensa a haste fina das serifas e mantém o
+   * texto legível em projeção (datashow) sem o peso exagerado do bold.
+   */
+  .font-display {
+    font-weight: 600;
+    letter-spacing: -0.005em;
+  }
+}
+
+@layer utilities {
+  /* Barra de rolagem discreta usada nas listas horizontais e no modal. */
+  .scroll-thin::-webkit-scrollbar {
+    height: 8px;
+    width: 8px;
+  }
+
+  .scroll-thin::-webkit-scrollbar-thumb {
+    background: #d6d3d1;
+    border-radius: 8px;
+  }
+}

@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head><meta charset="utf-8"><title>EduGestor — smoke test</title>
+<style>
+  body { font-family: Segoe UI, Arial, sans-serif; margin: 24px; background: #f4f1e9; color: #152238; }
+  h1 { font-size: 20px; }
+  #frame { width: 1280px; height: 900px; border: 1px solid #ccc; background: #fff; }
+  pre { white-space: pre-wrap; background: #fff; border: 1px solid #ddd; padding: 14px; border-radius: 8px; }
+  .pass { color: #15803d; } .fail { color: #b91c1c; font-weight: 700; }
+</style></head>
+<body>
+<h1>EduGestor — teste de fumaça</h1>
+<iframe id="frame"></iframe>
+<pre id="out">executando...</pre>
+<script>
+const frame = document.getElementById('frame');
+const out = document.getElementById('out');
+const results = [];
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+function record(name, ok, detail) { results.push({ name, ok, detail: detail || '' }); }
+function waitFor(fn, timeout = 5000) {
+  return new Promise((resolve, reject) => {
+    const start = Date.now();
+    (function poll() {
+      try { const value = fn(); if (value) return resolve(value); } catch (e) {}
+      if (Date.now() - start > timeout) return reject(new Error('timeout: ' + fn.toString().slice(0, 120)));
+      setTimeout(poll, 60);
+    })();
+  });
+}
+function text(el) { return (el ? el.textContent : '').replace(/\s+/g, ' ').trim(); }
+async function click(selector) {
+  const el = await waitFor(() => frame.contentDocument.querySelector(selector));
+  el.click();
+  await sleep(120);
+}
+async function nav(hash) {
+  const win = frame.contentWindow;
+  win.location.hash = hash;
+  await sleep(250);
+}
+async function login(userId) {
+  await click(`[data-action="login"][data-user="${userId}"]`);
+  await waitFor(() => frame.contentDocument.querySelector('#view h1'));
+  await sleep(150);
+}
+async function logout() {
+  await click('[data-action="logout"]');
+  await waitFor(() => frame.contentDocument.querySelector('.login-page'));
+}
+function state() { return JSON.parse(frame.contentWindow.localStorage.getItem('edugestor.state.v1')); }
+
+// Limpa a sessão antes de carregar o app e executa o roteiro uma única vez.
+localStorage.clear();
+let ran = false;
+frame.addEventListener('load', async () => {
+  if (ran) return;
+  ran = true;
+  const win = frame.contentWindow;
+  const doc = frame.contentDocument;
+  try {
+    await waitFor(() => frame.contentDocument.querySelector('.login-page'));
+    record('login renderiza 8 perfis', doc.querySelectorAll('[data-action="login"]').length === 8, doc.querySelectorAll('[data-action="login"]').length + ' perfis');
+
+    await login('u-ana');
+    record('aluno entra no painel', text(doc.querySelector('#view h1')).includes('Olá, Ana'), text(doc.querySelector('#view h1')));
+    const navLinks = [...doc.querySelectorAll('.nav-item')].map(a => text(a));
+    record('aluno vê os 5 módulos', ['Avaliações','Financeiro','Presença','Agenda','Biblioteca'].every(m => navLinks.some(l => l.includes(m))), navLinks.join(' | '));
+    record('aluno não vê administração', !navLinks.some(l => l.includes('Acesso e módulos')), navLinks.join(' | '));
+
+    await nav('#/avaliacoes');
+    await waitFor(() => doc.querySelector('[data-action="start-attempt"]'));
+    record('avaliações abertas aparecem', doc.querySelectorAll('.assessment-card').length >= 1, doc.querySelectorAll('.assessment-card').length + ' cards');
+    await click('[data-action="start-attempt"]');
+    await waitFor(() => doc.querySelector('#attempt-form'));
+    const form = doc.querySelector('#attempt-form');
+    form.querySelectorAll('.question-block').forEach(block => {
+      const first = block.querySelector('input[type="radio"]');
+      if (first) first.click();
+    });
+    doc.querySelector('[form="attempt-form"]').click();
+    await waitFor(() => !doc.querySelector('#attempt-form'), 5000);
+    await sleep(250);
+    const s1 = state();
+    const lastAttempt = s1.tentativas[s1.tentativas.length - 1];
+    record('tentativa é registrada com nota', !!lastAttempt && Number(lastAttempt.pontuacao) === 10, lastAttempt ? lastAttempt.pontuacao + '/10' : 'sem tentativa');
+
+    await nav('#/financeiro');
+    await waitFor(() => doc.querySelector('[data-action="pay-mensalidade"]'));
+    const payBtn = doc.querySelector('[data-action="pay-mensalidade"]');
+    const mensId = payBtn.getAttribute('data-id');
+    const before = state().pagamentos.length;
+    await payBtn.click();
+    await waitFor(() => doc.querySelector('#payment-form'));
+    const payForm = doc.querySelector('#payment-form');
+    payForm.valor.value = '100.00';
+    doc.querySelector('[form="payment-form"]').click();
+    await waitFor(() => !doc.querySelector('#payment-form'), 5000);
+    await sleep(200);
+    const s2 = state();
+    record('pagamento parcial é registrado', s2.pagamentos.length === before + 1, (s2.pagamentos.length - before) + ' novo(s)');
+    const mens = s2.mensalidades.find(m => m.id === mensId);
+    record('mensalidade muda de status', !!mens && ['PARCIAL','PAGA'].includes(mens.status), mens ? mens.status : 'não encontrada');
+
+    await nav('#/presenca');
+    await waitFor(() => doc.querySelector('.ring'));
+    record('aluno vê a própria frequência', text(doc.querySelector('#view h1')).includes('Sua frequência'), text(doc.querySelector('#view h1')));
+
+    await nav('#/agenda');
+    await waitFor(() => doc.querySelector('[data-action="request-change"]'));
+    await click('[data-action="request-change"]');
+    await waitFor(() => doc.querySelector('#request-form'));
+    doc.querySelector('#request-form [name="justificativa"]').value = 'Teste automatizado de alteração de horário.';
+    const solBefore = state().solicitacoes.length;
+    doc.querySelector('[form="request-form"]').click();
+    await waitFor(() => !doc.querySelector('#request-form'), 5000);
+    await sleep(200);
+    record('solicitação de agenda é criada', state().solicitacoes.length === solBefore + 1, (state().solicitacoes.length - solBefore) + ' nova(s)');
+
+    await nav('#/biblioteca');
+    await waitFor(() => doc.querySelector('[data-form="library-search"]'));
+    const search = doc.querySelector('[data-form="library-search"]');
+    search.q.value = 'banco';
+    search.querySelector('button[type="submit"]').click();
+    await waitFor(() => doc.querySelectorAll('.book-card').length >= 1);
+    record('busca no acervo retorna livro', doc.querySelectorAll('.book-card').length >= 1, doc.querySelectorAll('.book-card').length + ' resultado(s)');
+    record('busca entra no histórico', state().historico.some(h => h.usuarioId === 'u-ana' && h.termo === 'banco'), 'histórico');
+
+    await logout();
+    await login('u-maria');
+    const mariaNav = [...doc.querySelectorAll('.nav-item')].map(a => text(a));
+    record('secretaria não vê avaliações', !mariaNav.some(l => l.includes('Avaliações')), mariaNav.join(' | '));
+    await nav('#/avaliacoes');
+    await sleep(250);
+    record('rota bloqueada exibe acesso restrito', text(doc.querySelector('#view h1')).includes('não está disponível'), text(doc.querySelector('#view h1')));
+
+    await logout();
+    await login('u-carlos');
+    await nav('#/presenca');
+    await waitFor(() => doc.querySelector('#attendance-form'));
+    const att = doc.querySelector('#attendance-form select');
+    att.value = 'AUSENTE';
+    att.dispatchEvent(new Event('change', { bubbles: true }));
+    doc.querySelector('#attendance-form button[type="submit"]').click();
+    await waitFor(() => doc.body.textContent.includes('Chamada salva'), 5000).catch(() => {});
+    record('professor salva chamada', state().registros.some(r => r.status === 'AUSENTE'), 'registro');
+
+    await logout();
+    await login('u-root');
+    await nav('#/acesso');
+    await waitFor(() => doc.querySelector('[data-action="toggle-module"]'));
+    const sw = doc.querySelector('[data-action="toggle-module"]');
+    const beforePressed = sw.getAttribute('aria-pressed');
+    sw.click();
+    await sleep(250);
+    const afterPressed = doc.querySelector('[data-action="toggle-module"]').getAttribute('aria-pressed');
+    record('root altera a matriz de módulos', beforePressed !== afterPressed, beforePressed + ' → ' + afterPressed);
+
+    win.localStorage.clear();
+    record('estado limpo ao final', true, '');
+  } catch (err) {
+    record('execução', false, err && err.message ? err.message : String(err));
+  }
+  const passed = results.filter(r => r.ok).length;
+  out.innerHTML = `<strong class="${passed === results.length ? 'pass' : 'fail'}">${passed}/${results.length} verificações passaram</strong>\n` +
+    results.map(r => `${r.ok ? 'PASS' : 'FAIL'} · ${r.name}${r.detail ? ' — ' + r.detail : ''}`).join('\n');
+  document.title = passed === results.length ? 'TEST_OK' : 'TEST_FAIL';
+});
+
+frame.src = '../index.html?fresh=' + Date.now();
+</script>
+</body></html>

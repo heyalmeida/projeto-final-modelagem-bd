@@ -1,0 +1,295 @@
+﻿erDiagram
+    PAPEL ||--o{ USUARIO : "define"
+    GRUPO ||--o{ USUARIO : "agrupa"
+    GRUPO ||--o{ GRUPO_MODULO : "habilita"
+    MODULO ||--o{ GRUPO_MODULO : "liberado_para"
+
+    USUARIO ||--o| ALUNO : "perfil_de"
+    USUARIO ||--o| PROFESSOR : "perfil_de"
+
+    CURSO ||--o{ ALUNO : "vincula"
+    PROFESSOR |o--o{ CURSO : "coordena"
+    CURSO ||--o{ DISCIPLINA : "possui"
+    PROFESSOR ||--o{ DISCIPLINA : "responde"
+    DISCIPLINA ||--o{ TURMA : "oferta"
+    PROFESSOR ||--o{ TURMA : "leciona"
+    TURMA ||--o{ AULA : "contem"
+    TURMA ||--o{ MATRICULA : "recebe"
+    ALUNO ||--o{ MATRICULA : "realiza"
+
+    TURMA ||--o{ AVALIACAO : "possui"
+    AVALIACAO ||--|{ QUESTAO : "composta_por"
+    QUESTAO ||--o{ ALTERNATIVA : "possui"
+    AVALIACAO ||--o{ TENTATIVA : "gera"
+    MATRICULA ||--o{ TENTATIVA : "executa"
+    TENTATIVA ||--o{ RESPOSTA : "registra"
+    QUESTAO ||--o{ RESPOSTA : "recebe"
+    MATRICULA ||--o{ NOTA : "obtem"
+    AVALIACAO ||--o{ NOTA : "produz"
+    PROFESSOR ||--o{ NOTA : "lanca"
+
+    MODELO_CERTIFICADO ||--o{ CERTIFICADO : "define_layout"
+    MATRICULA ||--o| CERTIFICADO : "conclui_com"
+
+    PROFESSOR ||--o{ EVENTO : "responde"
+    EVENTO ||--o{ INSCRICAO_EVENTO : "recebe"
+    ALUNO ||--o{ INSCRICAO_EVENTO : "inscreve"
+
+    CURSO ||--o{ PROJETO_ACADEMICO : "abriga"
+    PROFESSOR ||--o{ PROJETO_ACADEMICO : "orienta"
+    PROJETO_ACADEMICO ||--|{ PARTICIPACAO_PROJETO : "possui"
+    ALUNO ||--o{ PARTICIPACAO_PROJETO : "participa"
+    PROJETO_ACADEMICO ||--o{ ENTREGA_PROJETO : "recebe"
+
+    DISCIPLINA |o--o{ OBRA_BIBLIOGRAFICA : "indica"
+    OBRA_BIBLIOGRAFICA ||--|{ EXEMPLAR : "possui"
+    EXEMPLAR ||--o{ EMPRESTIMO : "gera"
+    ALUNO ||--o{ EMPRESTIMO : "retira"
+
+    PAPEL {
+        int id_papel PK
+        string nome UK
+        string descricao
+    }
+    GRUPO {
+        int id_grupo PK
+        string nome UK
+        string descricao
+        boolean ativo
+    }
+    USUARIO {
+        int id_usuario PK
+        int id_grupo FK
+        int id_papel FK
+        string nome
+        string email UK
+        string senha_hash
+        boolean ativo
+        datetime criado_em
+    }
+    MODULO {
+        int id_modulo PK
+        string codigo UK
+        string nome
+        string descricao
+        boolean ativo
+    }
+    GRUPO_MODULO {
+        int id_grupo PK, FK
+        int id_modulo PK, FK
+        datetime habilitado_em
+        int id_usuario_habilitou FK
+    }
+    ALUNO {
+        int id_aluno PK
+        int id_usuario FK, UK
+        string ra UK
+        int id_curso FK
+        date data_ingresso
+        string situacao
+    }
+    PROFESSOR {
+        int id_professor PK
+        int id_usuario FK, UK
+        string siape UK
+        string titulacao
+        string area_atuacao
+    }
+    CURSO {
+        int id_curso PK
+        int id_professor_coordenador FK
+        string nome
+        string codigo UK
+        int carga_horaria
+        string modalidade
+        boolean ativo
+    }
+    DISCIPLINA {
+        int id_disciplina PK
+        int id_curso FK
+        int id_professor FK
+        string nome
+        string codigo
+        int carga_horaria
+        int periodo
+        boolean ativo
+    }
+    TURMA {
+        int id_turma PK
+        int id_disciplina FK
+        int id_professor FK
+        string codigo
+        string periodo_letivo
+        string turno
+        int vagas
+        string status
+    }
+    AULA {
+        int id_aula PK
+        int id_turma FK
+        datetime data_aula
+        string tema
+        string conteudo
+        int carga_horaria
+    }
+    MATRICULA {
+        int id_matricula PK
+        int id_aluno FK
+        int id_turma FK
+        datetime data_matricula
+        string status
+        decimal nota_final
+        decimal frequencia
+    }
+    AVALIACAO {
+        int id_avaliacao PK
+        int id_turma FK
+        string titulo
+        string tipo
+        decimal peso
+        decimal nota_maxima
+        datetime data_inicio
+        datetime data_fim
+        int max_tentativas
+        string status
+    }
+    QUESTAO {
+        int id_questao PK
+        int id_avaliacao FK
+        string enunciado
+        string tipo
+        decimal pontuacao
+        int ordem
+    }
+    ALTERNATIVA {
+        int id_alternativa PK
+        int id_questao FK
+        string texto
+        boolean correta
+        int ordem
+    }
+    TENTATIVA {
+        int id_tentativa PK
+        int id_matricula FK
+        int id_avaliacao FK
+        int numero
+        datetime inicio
+        datetime fim
+        string status
+        decimal pontuacao
+    }
+    RESPOSTA {
+        int id_resposta PK
+        int id_tentativa FK
+        int id_questao FK
+        int id_alternativa FK
+        string texto_dissertativo
+        boolean correta
+    }
+    NOTA {
+        int id_nota PK
+        int id_matricula FK
+        int id_avaliacao FK
+        int id_professor FK
+        decimal valor
+        datetime data_lancamento
+        string observacao
+    }
+    MODELO_CERTIFICADO {
+        int id_modelo PK
+        string nome
+        string layout
+        int carga_horaria_padrao
+        boolean ativo
+    }
+    CERTIFICADO {
+        int id_certificado PK
+        int id_matricula FK, UK
+        int id_modelo FK
+        string codigo_verificacao UK
+        datetime data_emissao
+        int carga_horaria
+        string status
+        string motivo_cancelamento
+    }
+    EVENTO {
+        int id_evento PK
+        int id_professor_responsavel FK
+        string titulo
+        string tipo
+        string descricao
+        datetime data_inicio
+        datetime data_fim
+        string local
+        int vagas
+        int carga_horaria
+        string status
+    }
+    INSCRICAO_EVENTO {
+        int id_inscricao PK
+        int id_evento FK
+        int id_aluno FK
+        datetime data_inscricao
+        string status
+        boolean presenca
+        boolean certificado_emitido
+    }
+    PROJETO_ACADEMICO {
+        int id_projeto PK
+        int id_curso FK
+        int id_professor_orientador FK
+        string titulo
+        string resumo
+        date data_inicio
+        date data_fim
+        string status
+        decimal nota_final
+    }
+    PARTICIPACAO_PROJETO {
+        int id_participacao PK
+        int id_projeto FK
+        int id_aluno FK
+        string papel
+        date data_entrada
+        boolean ativo
+    }
+    ENTREGA_PROJETO {
+        int id_entrega PK
+        int id_projeto FK
+        string titulo
+        string arquivo
+        int versao
+        datetime data_entrega
+        string status
+        decimal nota
+        string feedback
+    }
+    OBRA_BIBLIOGRAFICA {
+        int id_obra PK
+        int id_disciplina FK
+        string titulo
+        string autor
+        string isbn UK
+        string editora
+        int ano
+        string area
+    }
+    EXEMPLAR {
+        int id_exemplar PK
+        int id_obra FK
+        string tombo UK
+        string status
+        string localizacao
+    }
+    EMPRESTIMO {
+        int id_emprestimo PK
+        int id_exemplar FK
+        int id_aluno FK
+        datetime data_emprestimo
+        datetime data_prevista
+        datetime data_devolucao
+        string status
+        int renovacoes
+        decimal multa
+    }
+

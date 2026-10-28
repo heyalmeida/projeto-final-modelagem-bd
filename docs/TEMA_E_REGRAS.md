@@ -2,8 +2,8 @@
 
 **Trabalho final — Modelagem de Banco de Dados**
 **Tema:** faculdade
-**Base técnica:** aplicação em camadas `Models` / `DAO` / `Utils` / `Forms`, WinForms .NET Framework e SQLite, reaproveitada do projeto `ProjetoFinal-C#`.
-**Protótipo local:** [`prototipo/index.html`](../prototipo/index.html)
+**Base técnica:** a estrutura em camadas (`Models` / `DAO` / `Utils` / telas) do projeto anterior `ProjetoFinal-C#` foi reaproveitada como referência; a entrega vigente é o dashboard em **Next.js 15** (pasta `web/`), com dados em demonstração local.
+**Protótipo local:** o protótipo HTML/React evoluiu para o dashboard em [`web/`](../web/README.md) e foi removido do repositório após o porte.
 
 ---
 
@@ -278,4 +278,4 @@ A arquitetura em camadas é mantida; o domínio, as tabelas e as telas mudam.
 | `docs/diagramas/drawio/EduGestor-Diagramas.drawio` | Arquivo Draw.io com 14 páginas. |
 | `docs/diagramas/render/*.svg` | Diagramas vetoriais renderizados. |
 | `docs/Entrega-Modelagem-Educacional.pdf` | Documento final. |
-| `prototipo/index.html` | Protótipo local navegável. |
+| `web/` | Dashboard navegável em Next.js 15 (evolução do protótipo local). |

@@ -612,61 +612,61 @@ ER_LAYOUTS = {
 CLASS_LAYOUTS = {
     "acesso": {
         "papel": (40, 110),
-        "grupo_modulo": (400, 110),
-        "modulo": (760, 110),
+        "grupo_modulo": (430, 110),
+        "modulo": (820, 110),
         "usuario": (40, 440),
-        "grupo": (400, 440),
+        "grupo": (430, 440),
     },
     "academico": {
         "usuario": (40, 110),
-        "aluno": (400, 110),
-        "matricula": (760, 110),
+        "aluno": (430, 110),
+        "matricula": (820, 110),
         "professor": (40, 460),
-        "curso": (400, 460),
-        "turma": (760, 460),
+        "curso": (430, 460),
+        "turma": (820, 460),
     },
     "avaliacoes": {
-        "tentativa": (400, 110),
-        "resposta_aluno": (760, 110),
+        "tentativa": (430, 110),
+        "resposta_aluno": (820, 110),
         "matricula": (40, 110),
-        "avaliacao": (400, 460),
+        "avaliacao": (430, 460),
         "turma": (40, 460),
-        "questao": (760, 460),
+        "questao": (820, 460),
         "gestao_avaliacao": (40, 810),
-        "alternativa": (760, 810),
-        "professor": (400, 810),
+        "alternativa": (820, 810),
+        "professor": (430, 810),
     },
     "financeiro": {
         "metodo_pagamento": (40, 110),
-        "mensalidade": (400, 110),
-        "matricula": (760, 110),
+        "mensalidade": (430, 110),
+        "matricula": (820, 110),
         "pagamento": (40, 470),
-        "usuario": (400, 470),
-        "aluno": (760, 470),
+        "usuario": (430, 470),
+        "aluno": (820, 470),
     },
     "presenca": {
         "registro_presenca": (40, 110),
-        "sessao": (400, 110),
-        "professor": (760, 110),
+        "sessao": (430, 110),
+        "professor": (820, 110),
         "aluno": (40, 480),
-        "matricula": (400, 480),
-        "turma": (760, 480),
+        "matricula": (430, 480),
+        "turma": (820, 480),
         "usuario": (40, 780),
     },
     "agenda": {
         "solicitacao_alteracao": (40, 110),
-        "grade_horaria": (400, 110),
-        "professor": (760, 110),
+        "grade_horaria": (430, 110),
+        "professor": (820, 110),
         "usuario": (40, 480),
-        "turma": (400, 480),
-        "evento": (760, 480),
+        "turma": (430, 480),
+        "evento": (820, 480),
     },
     "biblioteca": {
         "acervo": (40, 110),
-        "livro": (400, 110),
-        "exemplar": (760, 110),
+        "livro": (430, 110),
+        "exemplar": (820, 110),
         "historico_busca": (40, 480),
-        "usuario": (400, 480),
+        "usuario": (430, 480),
     },
 }
 
@@ -680,25 +680,13 @@ TITLES = {
     "biblioteca": "Módulo Biblioteca",
 }
 
-PAGE_SIZE = {
-    "acesso": (1100, 760),
-    "academico": (1100, 790),
-    "avaliacoes": (1100, 1140),
-    "financeiro": (1100, 790),
-    "presenca": (1100, 1100),
-    "agenda": (1100, 860),
-    "biblioteca": (1100, 800),
-}
-
-PAGE_SIZE_ER = {
-    "acesso": (1100, 760),
-    "academico": (1100, 790),
-    "avaliacoes": (1100, 1080),
-    "financeiro": (1100, 790),
-    "presenca": (1100, 1020),
-    "agenda": (1100, 800),
-    "biblioteca": (1100, 760),
-}
+ER_COL_X = (40, 400, 760)
+CL_COL_X = (40, 430, 820)
+BOX_W = {"er": 220, "cl": 300}
+PAGE_W = {"er": 1100, "cl": 1160}
+GAP_LANE_MARGIN = 24  # folga nas laterais do vão entre colunas ao alocar pistas
+CORRIDOR_PAD = 12     # folga vertical dentro do corredor entre faixas
+PAGE_BOTTOM_PAD = 58  # espaço para a legenda abaixo da última tabela
 
 ATTR_ROW_H = 24
 TABLE_W = 220
@@ -771,7 +759,7 @@ def er_table(entity_key: str, x: int, y: int, module: str) -> list[str]:
             prefix = f"{flags.replace(',', ', ')} "
         row_id = f"{eid}__{name}"
         cells.append(
-            f'<mxCell id="{row_id}" value="{esc(prefix + name)}" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=5;html=1;fontSize=12;fontColor=#111827;" vertex="1" parent="{eid}">'
+            f'<mxCell id="{row_id}" value="{esc(prefix + name)}" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=5;html=1;fontSize=12;fontColor=#111827;portConstraint=eastwest;" vertex="1" parent="{eid}">'
             f'<mxGeometry x="0" y="{26 + index * ATTR_ROW_H}" width="{TABLE_W}" height="{ATTR_ROW_H}" as="geometry"/></mxCell>'
         )
     return cells
@@ -808,79 +796,271 @@ def class_table(entity_key: str, x: int, y: int, module: str) -> list[str]:
     return cells
 
 
-def er_page(module: str) -> str:
-    width, height = PAGE_SIZE_ER[module]
+# --------------------------------------------------------------- geometria
+
+def page_geometry(kind: str, module: str):
+    """Caixas absolutas, faixas (linhas de layout) e corredores livres da página."""
+    layout = (ER_LAYOUTS if kind == "er" else CLASS_LAYOUTS)[module]
+    xs = ER_COL_X if kind == "er" else CL_COL_X
+    w = BOX_W[kind]
+    boxes: dict[str, tuple] = {}
+    for key, (x, y) in layout.items():
+        h = er_table_height(ENTITIES[key]) if kind == "er" else class_height(ENTITIES[key])
+        boxes[key] = (x, y, x + w, y + h)
+
+    def col_of(x0: float) -> int:
+        return min(range(3), key=lambda i: abs(xs[i] - x0))
+
+    band_ys = sorted({b[1] for b in boxes.values()})
+    band_of = {k: band_ys.index(b[1]) for k, b in boxes.items()}
+    corridors: list[tuple[int, int]] = []
+    for i in range(len(band_ys) - 1):
+        bottom = max(b[3] for k, b in boxes.items() if band_of[k] == i)
+        top = min(b[1] for k, b in boxes.items() if band_of[k] == i + 1)
+        corridors.append((bottom, top))
+    gap_x = [(xs[i] + w, xs[i + 1]) for i in range(2)]
+    return boxes, corridors, gap_x, col_of
+
+
+def er_anchor_y(entity_key: str, attr_name: str, y0: int) -> float:
+    attrs = [a[0] for a in ENTITIES[entity_key]["attrs"]]
+    index = attrs.index(attr_name)
+    return y0 + 26 + index * ATTR_ROW_H + ATTR_ROW_H / 2
+
+
+def build_routes(kind: str, module: str, boxes: dict, col_of) -> list[dict]:
+    routes: list[dict] = []
+    if kind == "er":
+        for source, srow, target, trow, card_s, card_t in ER_RELATIONS[module]:
+            s_attr = row_attr(source, srow)
+            t_attr = row_attr(target, trow)
+            sb, tb = boxes[source], boxes[target]
+            routes.append({
+                "id": f"rel_{source}_{srow}_{target}_{trow}",
+                "source": f"tbl_{source}__{s_attr}",
+                "target": f"tbl_{target}__{t_attr}",
+                "value": "",
+                "labels": [],
+                "style": (
+                    "edgeStyle=orthogonalEdgeStyle;html=1;rounded=0;"
+                    f"startArrow={card_s};startFill=0;endArrow={card_t};endFill=0;"
+                    "strokeColor=#475569;strokeWidth=1.5;"
+                ),
+                "cls_kind": None,
+                "sy": er_anchor_y(source, s_attr, sb[1]),
+                "ty": er_anchor_y(target, t_attr, tb[1]),
+                "sbox": sb, "tbox": tb,
+                "scol": col_of(sb[0]), "tcol": col_of(tb[0]),
+            })
+    else:
+        for index, (source, target, mult_s, mult_t, label, cls_kind) in enumerate(CLASS_RELATIONS[module]):
+            sb, tb = boxes[source], boxes[target]
+            if cls_kind == "inheritance":
+                base = "edgeStyle=orthogonalEdgeStyle;html=1;rounded=0;endArrow=block;endFill=0;strokeColor=#475569;strokeWidth=1.5;"
+            elif cls_kind == "composition":
+                base = "edgeStyle=orthogonalEdgeStyle;html=1;rounded=0;startArrow=diamondThin;startFill=1;startSize=14;endArrow=none;strokeColor=#475569;strokeWidth=1.5;"
+            else:
+                base = "edgeStyle=orthogonalEdgeStyle;html=1;rounded=0;endArrow=open;endFill=0;strokeColor=#475569;strokeWidth=1.5;"
+            routes.append({
+                "id": f"crel_{source}_{target}_{index}",
+                "source": f"cls_{source}",
+                "target": f"cls_{target}",
+                "value": label,
+                "labels": [] if cls_kind == "inheritance" else [
+                    ("_src", mult_s, "left"),
+                    ("_dst", mult_t, "right"),
+                ],
+                "style": base,
+                "cls_kind": cls_kind,
+                "sy": (sb[1] + sb[3]) / 2,
+                "ty": (tb[1] + tb[3]) / 2,
+                "sbox": sb, "tbox": tb,
+                "scol": col_of(sb[0]), "tcol": col_of(tb[0]),
+            })
+    return routes
+
+
+def _side(col: int, gap_index: int) -> str:
+    """Lado da caixa que olha para o vão (gap i fica à direita da coluna i)."""
+    return "R" if gap_index >= col else "L"
+
+
+def _v_clear(boxes: dict, col_of, route: dict) -> bool:
+    """Coluna vertical livre entre as duas caixas (para ligação reta cima/baixo)."""
+    sb, tb = route["sbox"], route["tbox"]
+    if route["scol"] != route["tcol"]:
+        return False
+    col = route["scol"]
+    lo, hi = sorted((sb[3], tb[1]))
+    for key, b in boxes.items():
+        if col_of(b[0]) != col or b == sb or b == tb:
+            continue
+        if b[0] < sb[2] and b[2] > sb[0] and b[1] < hi and b[3] > lo:
+            return False
+    return True
+
+
+def _pick_corridor(corridors: list, sy: float, ty: float) -> int:
+    if not corridors:
+        raise RuntimeError("rota em duas colunas sem corredor livre entre faixas")
+    mid = (sy + ty) / 2
+    return min(range(len(corridors)), key=lambda i: abs((corridors[i][0] + corridors[i][1]) / 2 - mid))
+
+
+def plan_routes(routes: list[dict], boxes: dict, corridors: list, col_of) -> None:
+    """Define forma da rota, âncoras e quais vãos/corredores cada ligação usa."""
+    for r in routes:
+        dcol = r["tcol"] - r["scol"]
+        if r["cls_kind"] and dcol == 0 and _v_clear(boxes, col_of, r):
+            target_below = r["tbox"][1] > r["sbox"][3]
+            r["shape"] = "vstraight"
+            r["sanchor"], r["tanchor"] = ("B", "T") if target_below else ("T", "B")
+            continue
+        if dcol == 0:
+            gap = {0: 0, 1: 1, 2: 1}[r["scol"]]
+            r["shape"] = "s"
+            r["gaps"] = [gap]
+            r["sanchor"] = _side(r["scol"], gap)
+            r["tanchor"] = _side(r["tcol"], gap)
+        elif abs(dcol) == 1:
+            gap = min(r["scol"], r["tcol"])
+            r["shape"] = "s"
+            r["gaps"] = [gap]
+            r["sanchor"] = _side(r["scol"], gap)
+            r["tanchor"] = _side(r["tcol"], gap)
+        else:
+            gap_s = r["scol"] - 1 if dcol < 0 else r["scol"]
+            gap_t = r["tcol"] if dcol < 0 else r["tcol"] - 1
+            r["shape"] = "corridor"
+            r["gaps"] = [gap_s, gap_t]
+            r["corridor"] = _pick_corridor(corridors, r["sy"], r["ty"])
+            r["sanchor"] = _side(r["scol"], gap_s)
+            r["tanchor"] = _side(r["tcol"], gap_t)
+
+
+def allocate_lanes(routes: list[dict], gap_x: list) -> None:
+    """Distribui uma pista x distinta por ligação dentro de cada vão."""
+    for gi in (0, 1):
+        users = [r for r in routes if gi in r.get("gaps", [])]
+        gx0, gx1 = gap_x[gi]
+        lo, hi = gx0 + GAP_LANE_MARGIN, gx1 - GAP_LANE_MARGIN
+        for i, r in enumerate(users):
+            r.setdefault("lanes", {})[gi] = round(lo + (hi - lo) * (i + 1) / (len(users) + 1))
+
+
+def allocate_corridors(routes: list[dict], corridors: list) -> None:
+    for ci, (bottom, top) in enumerate(corridors):
+        users = [r for r in routes if r.get("corridor") == ci]
+        lo, hi = bottom + CORRIDOR_PAD, top - CORRIDOR_PAD
+        for i, r in enumerate(users):
+            r["cy"] = round(lo + (hi - lo) * (i + 1) / (len(users) + 1))
+
+
+def _anchor_frag(prefix: str, anchor: str) -> str:
+    vals = {"L": (0, 0.5), "R": (1, 0.5), "T": (0.5, 0), "B": (0.5, 1)}[anchor]
+    return f"{prefix}X={vals[0]};{prefix}Y={vals[1]};{prefix}Dx=0;{prefix}Dy=0;"
+
+
+def edge_points(r: dict) -> list[tuple]:
+    if r["shape"] == "vstraight":
+        return []
+    if r["shape"] == "s":
+        if abs(r["sy"] - r["ty"]) < 0.5:
+            return []
+        lane = r["lanes"][r["gaps"][0]]
+        return [(lane, round(r["sy"])), (lane, round(r["ty"]))]
+    gap_s, gap_t = r["gaps"]
+    lane_s, lane_t = r["lanes"][gap_s], r["lanes"][gap_t]
+    return [
+        (lane_s, round(r["sy"])),
+        (lane_s, r["cy"]),
+        (lane_t, r["cy"]),
+        (lane_t, round(r["ty"])),
+    ]
+
+
+def edge_cell(r: dict) -> list[str]:
+    style = r["style"] + _anchor_frag("exit", r["sanchor"]) + _anchor_frag("entry", r["tanchor"])
+    points = edge_points(r)
+    points_xml = ""
+    if points:
+        inner = "".join(f'<mxPoint x="{x}" y="{y}"/>' for x, y in points)
+        points_xml = f'<Array as="points">{inner}</Array>'
+    cells = [
+        f'<mxCell id="{r["id"]}" value="{esc(r["value"])}" style="{style}" edge="1" parent="1" source="{r["source"]}" target="{r["target"]}">'
+        f'<mxGeometry relative="1" as="geometry">{points_xml}</mxGeometry></mxCell>'
+    ]
+    for suffix, text, align in r["labels"]:
+        cells.append(
+            f'<mxCell id="{r["id"]}{suffix}" value="{esc(text)}" style="edgeLabel;resizable=0;html=1;align={align};verticalAlign=bottom;fontSize=11;fontColor=#334155;" vertex="1" connectable="0" parent="{r["id"]}"><mxGeometry x="{-1 if suffix == "_src" else 1}" relative="1" as="geometry"/></mxCell>'
+        )
+    return cells
+
+
+# ------------------------------------------------------------------ páginas
+
+def _page_header_cells(kind: str, module: str, width: int) -> list[str]:
     fill, stroke = PALETTE[module]
     title = TITLES[module]
-    cells = [
-        f'<mxCell id="title" value="ER — {esc(title)}" style="text;html=1;fontSize=22;fontStyle=1;align=left;verticalAlign=middle;fontColor=#0f172a;" vertex="1" parent="1"><mxGeometry x="40" y="24" width="700" height="32" as="geometry"/></mxCell>',
-        f'<mxCell id="subtitle" value="EduGestor · modelo entidade-relacionamento · cardinalidades crow\'s foot · PK/FK/UK" style="text;html=1;fontSize=11;align=left;verticalAlign=middle;fontColor=#64748b;" vertex="1" parent="1"><mxGeometry x="40" y="56" width="900" height="24" as="geometry"/></mxCell>',
+    prefix = "ER" if kind == "er" else "Classes"
+    subtitle = (
+        "EduGestor · modelo entidade-relacionamento · cardinalidades crow's foot · PK/FK/UK"
+        if kind == "er"
+        else "EduGestor · diagrama de classes UML · atributos, operações e multiplicidades"
+    )
+    return [
+        f'<mxCell id="title" value="{prefix} — {esc(title)}" style="text;html=1;fontSize=22;fontStyle=1;align=left;verticalAlign=middle;fontColor=#0f172a;" vertex="1" parent="1"><mxGeometry x="40" y="24" width="700" height="32" as="geometry"/></mxCell>',
+        f'<mxCell id="subtitle" value="{esc(subtitle)}" style="text;html=1;fontSize=11;align=left;verticalAlign=middle;fontColor=#64748b;" vertex="1" parent="1"><mxGeometry x="40" y="56" width="900" height="24" as="geometry"/></mxCell>',
         f'<mxCell id="badge" value="{esc(title)}" style="rounded=1;arcSize=50;html=1;fontSize=11;fontStyle=1;fillColor={fill};strokeColor={stroke};fontColor=#1f2937;align=center;verticalAlign=middle;" vertex="1" parent="1"><mxGeometry x="{width - 240}" y="26" width="200" height="28" as="geometry"/></mxCell>',
     ]
+
+
+def _model_xml(width: int, height: int, cells: list[str]) -> str:
+    return (
+        f'<mxGraphModel dx="1400" dy="900" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="{width}" pageHeight="{height}" math="0" shadow="0" background="#ffffff">'
+        "<root>"
+        '<mxCell id="0"/><mxCell id="1" parent="0"/>'
+        + "".join(cells)
+        + "</root></mxGraphModel>"
+    )
+
+
+def er_page(module: str) -> str:
+    boxes, corridors, gap_x, col_of = page_geometry("er", module)
+    routes = build_routes("er", module, boxes, col_of)
+    plan_routes(routes, boxes, corridors, col_of)
+    allocate_lanes(routes, gap_x)
+    allocate_corridors(routes, corridors)
+    width = PAGE_W["er"]
+    height = max(b[3] for b in boxes.values()) + PAGE_BOTTOM_PAD
+    cells = _page_header_cells("er", module, width)
     for entity_key, (x, y) in ER_LAYOUTS[module].items():
         cells.extend(er_table(entity_key, x, y, module))
-    for source, source_row, target, target_row, start, end in ER_RELATIONS[module]:
-        source_attr = row_attr(source, source_row)
-        target_attr = row_attr(target, target_row)
-        cells.append(
-            f'<mxCell id="rel_{source}_{source_row}_{target}_{target_row}" style="edgeStyle=entityRelationEdgeStyle;html=1;rounded=0;startArrow={start};startFill=0;endArrow={end};endFill=0;strokeColor=#475569;strokeWidth=1.5;" edge="1" parent="1" source="tbl_{source}__{source_attr}" target="tbl_{target}__{target_attr}">'
-            f'<mxGeometry relative="1" as="geometry"/></mxCell>'
-        )
+    for r in routes:
+        cells.extend(edge_cell(r))
     cells.append(
         f'<mxCell id="legend" value="PK chave primária · FK chave estrangeira · UK único · 1 : N / 0..1 : N conforme a ponta" style="text;html=1;fontSize=10;align=left;verticalAlign=middle;fontColor=#64748b;" vertex="1" parent="1"><mxGeometry x="40" y="{height - 34}" width="900" height="20" as="geometry"/></mxCell>'
     )
-    return (
-        f'<mxGraphModel dx="1400" dy="900" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="{width}" pageHeight="{height}" math="0" shadow="0" background="#ffffff">'
-        "<root>"
-        '<mxCell id="0"/><mxCell id="1" parent="0"/>'
-        + "".join(cells)
-        + "</root></mxGraphModel>"
-    )
+    return _model_xml(width, height, cells)
 
 
 def class_page(module: str) -> str:
-    width, height = PAGE_SIZE[module]
-    fill, stroke = PALETTE[module]
-    title = TITLES[module]
-    cells = [
-        f'<mxCell id="title" value="Classes — {esc(title)}" style="text;html=1;fontSize=22;fontStyle=1;align=left;verticalAlign=middle;fontColor=#0f172a;" vertex="1" parent="1"><mxGeometry x="40" y="24" width="700" height="32" as="geometry"/></mxCell>',
-        f'<mxCell id="subtitle" value="EduGestor · diagrama de classes UML · atributos, operações e multiplicidades" style="text;html=1;fontSize=11;align=left;verticalAlign=middle;fontColor=#64748b;" vertex="1" parent="1"><mxGeometry x="40" y="56" width="900" height="24" as="geometry"/></mxCell>',
-        f'<mxCell id="badge" value="{esc(title)}" style="rounded=1;arcSize=50;html=1;fontSize=11;fontStyle=1;fillColor={fill};strokeColor={stroke};fontColor=#1f2937;align=center;verticalAlign=middle;" vertex="1" parent="1"><mxGeometry x="{width - 240}" y="26" width="200" height="28" as="geometry"/></mxCell>',
-    ]
+    boxes, corridors, gap_x, col_of = page_geometry("cl", module)
+    routes = build_routes("cl", module, boxes, col_of)
+    plan_routes(routes, boxes, corridors, col_of)
+    allocate_lanes(routes, gap_x)
+    allocate_corridors(routes, corridors)
+    width = PAGE_W["cl"]
+    height = max(b[3] for b in boxes.values()) + PAGE_BOTTOM_PAD
+    cells = _page_header_cells("cl", module, width)
     for entity_key, (x, y) in CLASS_LAYOUTS[module].items():
         cells.extend(class_table(entity_key, x, y, module))
-    for index, (source, target, source_mult, target_mult, label, kind) in enumerate(CLASS_RELATIONS[module]):
-        edge_id = f"crel_{source}_{target}_{index}"
-        if kind == "inheritance":
-            style = "edgeStyle=orthogonalEdgeStyle;html=1;rounded=0;endArrow=block;endFill=0;strokeColor=#475569;strokeWidth=1.5;"
-            value = ""
-        elif kind == "composition":
-            style = "edgeStyle=orthogonalEdgeStyle;html=1;rounded=0;startArrow=diamondThin;startFill=1;startSize=14;endArrow=none;strokeColor=#475569;strokeWidth=1.5;"
-            value = label
-        else:
-            style = "edgeStyle=orthogonalEdgeStyle;html=1;rounded=0;endArrow=open;endFill=0;strokeColor=#475569;strokeWidth=1.5;"
-            value = label
-        cells.append(
-            f'<mxCell id="{edge_id}" value="{esc(value)}" style="{style}" edge="1" parent="1" source="cls_{source}" target="cls_{target}">'
-            '<mxGeometry relative="1" as="geometry"/></mxCell>'
-        )
-        if kind != "inheritance":
-            cells.append(
-                f'<mxCell id="{edge_id}_src" value="{esc(source_mult)}" style="edgeLabel;resizable=0;html=1;align=left;verticalAlign=bottom;fontSize=11;fontColor=#334155;" vertex="1" connectable="0" parent="{edge_id}"><mxGeometry x="-1" relative="1" as="geometry"/></mxCell>'
-            )
-            cells.append(
-                f'<mxCell id="{edge_id}_dst" value="{esc(target_mult)}" style="edgeLabel;resizable=0;html=1;align=right;verticalAlign=bottom;fontSize=11;fontColor=#334155;" vertex="1" connectable="0" parent="{edge_id}"><mxGeometry x="1" relative="1" as="geometry"/></mxCell>'
-            )
+    for r in routes:
+        cells.extend(edge_cell(r))
     cells.append(
         f'<mxCell id="legend" value="Multiplicidades: 1 · 0..1 · 0..* · 1..* · herança com triângulo vazio · composição com losango preenchido" style="text;html=1;fontSize=10;align=left;verticalAlign=middle;fontColor=#64748b;" vertex="1" parent="1"><mxGeometry x="40" y="{height - 34}" width="950" height="20" as="geometry"/></mxCell>'
     )
-    return (
-        f'<mxGraphModel dx="1400" dy="900" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="{width}" pageHeight="{height}" math="0" shadow="0" background="#ffffff">'
-        "<root>"
-        '<mxCell id="0"/><mxCell id="1" parent="0"/>'
-        + "".join(cells)
-        + "</root></mxGraphModel>"
-    )
+    return _model_xml(width, height, cells)
 
 
 def wrap_drawio(name: str, diagram_id: str, model: str) -> str:
